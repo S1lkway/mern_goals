@@ -7,7 +7,6 @@ const User = require('../models/userModel')
 // @route POST /api/users
 // @access Puplic
 const registerUser = asyncHandler(async (req, res) => {
-
   const { name, email, password } = req.body
 
   if (!name || !email || !password) {
@@ -25,7 +24,6 @@ const registerUser = asyncHandler(async (req, res) => {
   // hash password
   const salt = await bcrypt.genSalt(10)
   const hashedPassword = await bcrypt.hash(password, salt)
-
   // create user
   const user = await User.create({
     name,
@@ -37,7 +35,8 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(201).json({
       _id: user.id,
       name: user.name,
-      email: user.email
+      email: user.email,
+      token: generateToken(user.id),
     })
   } else {
     res.status(400)
@@ -50,9 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route POST /api/users/login
 // @access Puplic
 const loginUser = asyncHandler(async (req, res) => {
-
   const { email, password } = req.body
-
   // check for user mail
   const user = await User.findOne({ email })
 
@@ -62,6 +59,7 @@ const loginUser = asyncHandler(async (req, res) => {
       _id: user.id,
       name: user.name,
       email: user.email,
+      token: generateToken(user.id),
     })
   } else {
     res.status(400)
@@ -71,11 +69,18 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // @desc Get user data
 // @route GET /api/users/me
-// @access Puplic
+// @access Private
 const getMe = asyncHandler(async (req, res) => {
 
   res.json({ message: 'User data' })
 })
+
+// Generate token
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  })
+}
 
 module.exports = {
   registerUser,
